@@ -175,12 +175,15 @@ func main() {
 	var conn string
 
 	bootstrap := flag.Bool("bootstrap", false, "are we the bootstrap node")
+	compat := flag.Bool("compat", false, "rpr-compatible implementation?")
 	port := flag.Int("p", 0, "port for node's tcp server (for call setup with other nodes)")
 	ubw := flag.Int("u", 0, "upload bandwidth limit")
 	flag.StringVar(&conn, "conn", "127.0.0.1:8888", "host:port for the session")
 
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
+
+	_ = compat
 
 	if (*ubw == 0 || *port == 0) && !*bootstrap {
 		fmt.Println("u, b, and p parameters must be provided")

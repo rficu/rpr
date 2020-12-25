@@ -10,14 +10,12 @@ const (
 	RELAY_REJECT  = 0 // node cannot provide/does not require packet relaying
 	RELAY_REQUEST = 1 // node requires packet relaying
 	RELAY_OFFER   = 2 // node offers packet relay service
-	// RELAY_RESERVE = 3 // node may require packet relaying in the future
 )
 
 const (
 	CONF_END     = 0 // end rpr session with this node
 	CONF_ACCEPT  = 1 // accept packet relay offer
 	CONF_CONFIRM = 2 // confirm the acceptance of packet relaying
-	//CONF_RESERVE = 2 // reserve bandwidth for future from this node
 )
 
 const (
@@ -89,8 +87,6 @@ func initRPR(sessions *[]Session, upload int) RPR_Context {
 	// # of nodes * 1 mbps. InitMessage does not yet initiate any packet
 	// relay agreements but only notifies other participants that such
 	// a service is needed by this node
-	//
-	// TODO add better explanation of this code
 	if upload < len((*sessions)) {
 		initMsg.RelayType = RELAY_REQUEST
 	} else {

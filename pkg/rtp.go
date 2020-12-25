@@ -50,8 +50,6 @@ func recvData(session *Session, ctx *Context) {
 			// received a packet from that node and we must now send this packet
 			// to other nodes of the session
 			if session.rprInfo.role == RELAY_NODE {
-				// println("we're acting as relay node, send this packet to other nodes")
-
 				for i, sess := range ctx.sessions {
 					if &ctx.sessions[i] != session {
 						rp2 := sess.rtpCtx.rtpSession.NewDataPacket(rp.Timestamp())
@@ -63,7 +61,7 @@ func recvData(session *Session, ctx *Context) {
 				}
 			}
 			if rp.CsrcCount() > 0 {
-				fmt.Printf("[rtp] received packet from %x\n", rp.CsrcList()[0])
+				fmt.Printf("[rtp] received relayed packet from %x\n", rp.CsrcList()[0])
 			} else {
 				fmt.Printf("[rtp] received packet from %x\n", rp.Ssrc())
 			}
