@@ -100,6 +100,10 @@ func initRPR(sessions *[]Session, upload int) RPR_Context {
 	}
 
 	for _, session := range *sessions {
+		if !session.them.rprSupported {
+			continue
+		}
+
 		enc := gob.NewEncoder(session.conn)
 		dec := gob.NewDecoder(session.conn)
 

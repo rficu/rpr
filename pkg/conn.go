@@ -13,6 +13,7 @@ type Context struct {
 	sessionChannel chan Session // channel for communication between acceptCalls and rtpLoop
 	sessions       []Session    // list of sessions
 	relayCtx       RPR_Context  // RPR context (global to context)
+	rprSupported   bool         // do we support RPR
 }
 
 type Node struct {
@@ -90,14 +91,16 @@ func finalizeInit(ctx Context) {
 		ctx.sessions = append(ctx.sessions, session)
 		node.rtpPort += 2 // rtp + rtcp
 
-		if rprNeedRelay(ctx.relayCtx) {
+		if rprNeedRelay(ctx.relayCtx) && ctx.rprSupported {
 			if !rprRequestRelay(ctx) {
 				fmt.Printf("[error] could not agree on packet relay agreement!")
 			}
 		}
 
 		fmt.Printf("initialize new generic session for %x\n", session.them.uniqID)
-		go rprPacketHandler(&ctx, &ctx.sessions[len(ctx.sessions)-1])
+		if ctx.rprSupported {
+			go rprPacketHandler(&ctx, &ctx.sessions[len(ctx.sessions)-1])
+		}
 	}
 }
 
@@ -134,7 +137,7 @@ func InitBootstrap(conn string) {
 	}
 }
 
-func InitNode(conn string, port int, up int) {
+func InitNode(conn string, port int, up int, userAgent string) {
 	// connect to bootstrap node and fetch all participants of an ongoing call
 	participants, p := getParticipants(conn, port)
 
@@ -154,10 +157,16 @@ func InitNode(conn string, port int, up int) {
 		}
 
 		rtpPort := 10000 + port + (i * 2)
-		capab := sipInitSessionInvite(c_n, p.UniqID, rtpPort, "COMPAT")
+		capab := sipInitSessionInvite(c_n, p.UniqID, rtpPort, userAgent)
+
+		if userAgent == "COMPAT" {
+			ctx.rprSupported = true
+		} else {
+			ctx.rprSupported = true
+		}
 
 		var remote Node = Node{participant.Port, capab.rtpPort, capab.RPRCompat, participant.UniqID}
-		var local Node = Node{rtpPort, rtpPort, true, p.UniqID}
+		var local Node = Node{rtpPort, rtpPort, ctx.rprSupported, p.UniqID}
 		ctx.sessions = append(ctx.sessions, Session{local, remote, c_n, PacketRelayAgreement{}, RTP_Context{}})
 	}
 
@@ -168,7 +177,9 @@ func InitNode(conn string, port int, up int) {
 	// b) query if remote needs us to relay packets for them
 	//
 	// RPR handshake is performed only if both we and remote support RPR
-	ctx.relayCtx = initRPR(&ctx.sessions, up)
+	if ctx.rprSupported {
+		ctx.relayCtx = initRPR(&ctx.sessions, up)
+	}
 	ctx.id = p.UniqID
 	ctx.port = port
 

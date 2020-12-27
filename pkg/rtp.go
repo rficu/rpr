@@ -105,7 +105,7 @@ func rtpLoop(ctx *Context) {
 
 	for i, _ := range ctx.sessions {
 		makeRtpSession(&ctx.sessions[i], ctx)
-		time.Sleep(5 * 1000 * time.Millisecond)
+		time.Sleep(2 * 1000 * time.Millisecond)
 	}
 
 	for {

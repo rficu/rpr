@@ -34,9 +34,9 @@ type SipMessage struct {
 // this function blocks until ACK is received
 func sipInitSessionInvite(conn net.Conn, id uint32, rtpPort int, userAgent string) NodeCapabilities {
 
-	fmt.Printf("[sip] sending invite message: %d '%s'\n", rtpPort, userAgent)
-
 	var msg SipMessage
+
+	fmt.Printf("[sip] sending invite message: %d '%s'\n", rtpPort, userAgent)
 
 	dec := gob.NewDecoder(conn)
 	enc := gob.NewEncoder(conn)
