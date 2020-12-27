@@ -26,16 +26,16 @@ func main() {
 	time.Sleep(500 * time.Millisecond)
 
 	// this node is capable of acting as a relay node
-	go rpr.InitNode("127.0.0.1:2222", 8100, 5)
+	go rpr.InitNode("127.0.0.1:2222", 8100, 5, "COMPAT")
 	time.Sleep(2000 * time.Millisecond)
 
 	// this node is capable of acting as a relay node
-	go rpr.InitNode("127.0.0.1:2222", 8200, 1)
+	go rpr.InitNode("127.0.0.1:2222", 8200, 1, "COMPAT")
 	time.Sleep(7 * 1000 * time.Millisecond)
 
 	// this node can only acts as a client node because all of its
 	// bandwidth is used by sending video to the two nodes above
-	go rpr.InitNode("127.0.0.1:2222", 8300, 2)
+	go rpr.InitNode("127.0.0.1:2222", 8300, 2, "COMPAT")
 	time.Sleep(3 * 1000 * time.Millisecond)
 
 	for {

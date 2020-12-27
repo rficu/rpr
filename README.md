@@ -1,4 +1,4 @@
-# Resource-aware Packet Routing Scheme for Large-scale P2P Video Conferences (RPR)
+# Resource-aware Packet Routing for Large-scale P2P Video Conferences (RPR)
 
 RPR is a scheme for allocating upload bandwidth from other participants of a video call for peers that have a very limited upload bandwidth to enable everyone to send video at acceptable quality.
 
