@@ -27,27 +27,16 @@ func main() {
 
 	// this node is capable of acting as a relay node
 	go rpr.InitNode("127.0.0.1:2222", 8100, 5)
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
 
 	// this node is capable of acting as a relay node
-	go rpr.InitNode("127.0.0.1:2222", 8200, 10)
-	time.Sleep(3 * 1000 * time.Millisecond)
+	go rpr.InitNode("127.0.0.1:2222", 8200, 1)
+	time.Sleep(7 * 1000 * time.Millisecond)
 
 	// this node can only acts as a client node because all of its
 	// bandwidth is used by sending video to the two nodes above
 	go rpr.InitNode("127.0.0.1:2222", 8300, 2)
 	time.Sleep(3 * 1000 * time.Millisecond)
-
-	// new node joins, it does not require packet relaying
-	// but the node above cannot no longer send packets to
-	// everybody which is why it start looking for
-	// a relay node for its packets
-	go rpr.InitNode("127.0.0.1:2222", 8400, 5)
-
-	// let the session continue for 10 seconds
-	time.Sleep(10 * 1000 * time.Millisecond)
-
-	// TODO terminate first node
 
 	for {
 		time.Sleep(5 * 1000 * time.Millisecond)

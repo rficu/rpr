@@ -87,9 +87,17 @@ func finalizeInit(ctx Context) {
 			rprPerformHandshake(&ctx.relayCtx, &session)
 		}
 
-		fmt.Printf("initialize new generic session for %x\n", session.them.uniqID)
 		ctx.sessions = append(ctx.sessions, session)
 		node.rtpPort += 2 // rtp + rtcp
+
+		if rprNeedRelay(ctx.relayCtx) {
+			if !rprRequestRelay(ctx) {
+				fmt.Printf("[error] could not agree on packet relay agreement!")
+			}
+		}
+
+		fmt.Printf("initialize new generic session for %x\n", session.them.uniqID)
+		go rprPacketHandler(&ctx, &ctx.sessions[len(ctx.sessions)-1])
 	}
 }
 

@@ -40,10 +40,6 @@ On top of this, one of the older participants of a call also notices that it is 
 able to send the video to everyone so it also requests packet relay service from one of
 the nodes.
 
-Later during the session, a node exits the session which is noticed by the node that
-was in need of packet relaying. This prompts the node to end the RPR agreement with
-the selected relay and the node start to send packets normally again.
-
 ```
 go run cmd/demo2/main.go
 ```

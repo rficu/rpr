@@ -36,7 +36,7 @@ func sendData(stop *bool, session *Session) {
 		}
 
 		stamp += 160
-		time.Sleep(5 * 1000 * time.Millisecond)
+		time.Sleep(1 * 1000 * time.Millisecond)
 	}
 }
 
@@ -50,13 +50,15 @@ func recvData(session *Session, ctx *Context) {
 			// received a packet from that node and we must now send this packet
 			// to other nodes of the session
 			if session.rprInfo.role == RELAY_NODE {
-				for i, sess := range ctx.sessions {
-					if &ctx.sessions[i] != session {
-						rp2 := sess.rtpCtx.rtpSession.NewDataPacket(rp.Timestamp())
-						rp2.SetPayload(rp.Payload())
-						rp2.SetCsrcList([]uint32{rp.Ssrc()})
-						sess.rtpCtx.rtpSession.WriteData(rp2)
-						rp2.FreePacket()
+				for _, sess := range ctx.sessions {
+					if sess.them.uniqID != session.them.uniqID {
+						if sess.rtpCtx.rtpSession != nil {
+							rp2 := sess.rtpCtx.rtpSession.NewDataPacket(rp.Timestamp())
+							rp2.SetPayload(rp.Payload())
+							rp2.SetCsrcList([]uint32{rp.Ssrc()})
+							sess.rtpCtx.rtpSession.WriteData(rp2)
+							rp2.FreePacket()
+						}
 					}
 				}
 			}

@@ -10,6 +10,7 @@ const (
 	RELAY_REJECT  = 0 // node cannot provide/does not require packet relaying
 	RELAY_REQUEST = 1 // node requires packet relaying
 	RELAY_OFFER   = 2 // node offers packet relay service
+	RELAY_RELEASE = 3 // resign from the negotiated packet relay agreement
 )
 
 const (
@@ -57,6 +58,11 @@ type InitResponseMessage struct {
 	RelayNeeded    bool   // do we need packet relaying
 	RelayAvailable bool   // can we provide packet relaying
 	RelayType      int    // TODO
+}
+
+type RPRMessage struct {
+	UniqID    uint32 // our unique id
+	RelayType int    // relay type
 }
 
 type SessionConfigurationMessage struct {
@@ -257,4 +263,149 @@ func rprPerformHandshake(ctx *RPR_Context, session *Session) {
 	}
 
 	ctx.nodes++
+}
+
+func rprRequestRelay(ctx Context) bool {
+
+	if !rprNeedRelay(ctx.relayCtx) {
+		return true
+	}
+
+	var selected int
+	var reqMsg RPRMessage
+	var respMsg RPRMessage
+	var sessConf SessionConfigurationMessage
+
+	reqMsg.UniqID = (ctx.sessions)[0].us.uniqID
+	reqMsg.RelayType = RELAY_REQUEST
+
+	// select the first offer received
+	for i, session := range ctx.sessions {
+		enc := gob.NewEncoder(session.conn)
+		dec := gob.NewDecoder(session.conn)
+
+		enc.Encode(&reqMsg)
+		dec.Decode(&respMsg)
+
+		if respMsg.RelayType == RELAY_OFFER {
+			selected = i
+			goto accept
+		} else {
+			enc := gob.NewEncoder(session.conn)
+			enc.Encode(&SessionConfigurationMessage{(ctx.sessions)[0].us.uniqID, CONF_END})
+		}
+	}
+
+	return false
+
+accept:
+	fmt.Printf("[rpr] selected id: %x\n", (ctx.sessions)[selected].them.uniqID)
+
+	enc := gob.NewEncoder((ctx.sessions)[selected].conn)
+	dec := gob.NewDecoder((ctx.sessions)[selected].conn)
+
+	enc.Encode(&SessionConfigurationMessage{(ctx.sessions)[0].us.uniqID, CONF_ACCEPT})
+	dec.Decode(&sessConf)
+
+	if sessConf.MessageType != CONF_CONFIRM {
+		fmt.Printf("[rpr] could not confirm packet relay with remote: %d!\n", sessConf.MessageType)
+		// TODO retry with other candidate relay nodes
+		return false
+	}
+
+	fmt.Printf("[rpr] packet relay confirmation received from %x\n", (ctx.sessions)[selected].them.uniqID)
+
+	for i, _ := range ctx.sessions {
+		(ctx.sessions)[i].rprInfo.role = CLIENT_NODE
+		(ctx.sessions)[i].rprInfo.uniqID = (ctx.sessions)[selected].them.uniqID
+	}
+
+	return true
+}
+
+func rprReleaseAgreement(ctx *Context, session *Session) {
+
+	var sessConf SessionConfigurationMessage
+
+	enc := gob.NewEncoder(session.conn)
+	dec := gob.NewDecoder(session.conn)
+
+	enc.Encode(&RPRMessage{(ctx.sessions)[0].us.uniqID, RELAY_RELEASE})
+	dec.Decode(&sessConf)
+
+	if sessConf.MessageType != CONF_CONFIRM {
+		fmt.Printf("received an invalid response from relay node: %d\n", sessConf.MessageType)
+	}
+	enc.Encode(&SessionConfigurationMessage{(ctx.sessions)[0].us.uniqID, CONF_END})
+
+	for i, _ := range ctx.sessions {
+		(ctx.sessions)[i].rprInfo.role = NORMAL_NODE
+		(ctx.sessions)[i].rprInfo.uniqID = 0
+	}
+}
+
+func rprPacketHandler(ctx *Context, session *Session) {
+
+	enc := gob.NewEncoder(session.conn)
+	dec := gob.NewDecoder(session.conn)
+
+	var rprMsg RPRMessage
+	var sessMsg SessionConfigurationMessage
+
+	for {
+		dec.Decode(&rprMsg)
+
+		switch rprMsg.RelayType {
+		case RELAY_REQUEST:
+			if ctx.relayCtx.upload-ctx.relayCtx.nodes > 1 {
+
+				rprMsg.UniqID = session.us.uniqID
+				rprMsg.RelayType = RELAY_OFFER
+
+				enc.Encode(&rprMsg)
+				dec.Decode(&sessMsg)
+
+				if sessMsg.MessageType == CONF_ACCEPT {
+					enc.Encode(&SessionConfigurationMessage{(ctx.sessions)[0].us.uniqID, CONF_CONFIRM})
+					session.rprInfo.role = RELAY_NODE
+				} else if sessMsg.MessageType == CONF_END {
+					fmt.Printf("client abruptly ended the handshake with us!\n")
+				} else {
+					fmt.Printf("received an invalid message: %d!\n", sessMsg.MessageType)
+				}
+			} else {
+				rprMsg.UniqID = session.us.uniqID
+				rprMsg.RelayType = RELAY_REJECT
+
+				enc.Encode(&rprMsg)
+				dec.Decode(&sessMsg)
+
+				if sessMsg.MessageType != CONF_END {
+					fmt.Printf("received an invalid message: %d!\n", sessMsg.MessageType)
+				}
+			}
+		case RELAY_RELEASE:
+			for _, sess := range ctx.sessions {
+				if sess.them.uniqID == rprMsg.UniqID {
+					enc.Encode(&SessionConfigurationMessage{(ctx.sessions)[0].us.uniqID, CONF_CONFIRM})
+					dec.Decode(&sessMsg)
+
+					if sessMsg.MessageType != CONF_END {
+						fmt.Printf("received an invalid message: %d!\n", sessMsg.MessageType)
+					}
+
+					session.rprInfo.role = RELAY_NODE
+				}
+			}
+		}
+	}
+}
+
+func rprNeedRelay(ctx RPR_Context) bool {
+
+	if ctx.upload-ctx.nodes <= 0 {
+		return true
+	}
+
+	return false
 }
