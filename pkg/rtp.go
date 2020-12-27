@@ -1,4 +1,4 @@
-package main
+package rpr
 
 import (
 	"fmt"
@@ -61,9 +61,9 @@ func recvData(session *Session, ctx *Context) {
 				}
 			}
 			if rp.CsrcCount() > 0 {
-				fmt.Printf("[rtp] received relayed packet from %x\n", rp.CsrcList()[0])
+				fmt.Printf("[rtp] %x received relayed packet from %x\n", session.us.uniqID, rp.CsrcList()[0])
 			} else {
-				fmt.Printf("[rtp] received packet from %x\n", rp.Ssrc())
+				fmt.Printf("[rtp] %x received packet from %x\n", session.us.uniqID, rp.Ssrc())
 			}
 			rp.FreePacket()
 		case <-stopLocalRecv:

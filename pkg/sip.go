@@ -1,4 +1,4 @@
-package main
+package rpr
 
 import (
 	"encoding/gob"

@@ -1,12 +1,10 @@
-package main
+package rpr
 
 import (
 	"encoding/gob"
-	"flag"
 	"fmt"
 	"math/rand"
 	"net"
-	"time"
 )
 
 type Context struct {
@@ -96,7 +94,7 @@ func finalizeInit(ctx Context) {
 }
 
 // @param conn: address of the bootstrap node
-func initBootstrap(conn string) {
+func InitBootstrap(conn string) {
 	l, err := net.Listen("tcp", conn)
 	if err != nil {
 		fmt.Println(err)
@@ -105,6 +103,8 @@ func initBootstrap(conn string) {
 
 	var participants []Participant
 	var participant Participant
+
+	fmt.Printf("[bootstrap] listening incoming connections: %s...\n", conn)
 
 	for {
 		c, err := l.Accept()
@@ -126,7 +126,7 @@ func initBootstrap(conn string) {
 	}
 }
 
-func initNode(conn string, port int, up int) {
+func InitNode(conn string, port int, up int) {
 	// connect to bootstrap node and fetch all participants of an ongoing call
 	participants, p := getParticipants(conn, port)
 
@@ -168,31 +168,4 @@ func initNode(conn string, port int, up int) {
 	// which spawns a separate thread for rtp loop and starts listening
 	// to incoming calls
 	finalizeInit(ctx)
-}
-
-func main() {
-
-	var conn string
-
-	bootstrap := flag.Bool("bootstrap", false, "are we the bootstrap node")
-	compat := flag.Bool("compat", false, "rpr-compatible implementation?")
-	port := flag.Int("p", 0, "port for node's tcp server (for call setup with other nodes)")
-	ubw := flag.Int("u", 0, "upload bandwidth limit")
-	flag.StringVar(&conn, "conn", "127.0.0.1:8888", "host:port for the session")
-
-	flag.Parse()
-	rand.Seed(time.Now().UnixNano())
-
-	_ = compat
-
-	if (*ubw == 0 || *port == 0) && !*bootstrap {
-		fmt.Println("u, b, and p parameters must be provided")
-		return
-	}
-
-	if *bootstrap {
-		initBootstrap(conn)
-	} else {
-		initNode(conn, *port, *ubw)
-	}
 }
