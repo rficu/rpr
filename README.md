@@ -28,7 +28,7 @@ is large enough to saturate the caller's upload bandwidth, it requests packet re
 one of the participants.
 
 ```
-go run cmd/demo1.go
+go run cmd/demo1/main.go
 ```
 
 ### Demo 2 - Adaptive routing - New node joins the call, packet relaying must take place
@@ -41,7 +41,7 @@ able to send the video to everyone so it also requests packet relay service from
 the nodes.
 
 ```
-go run cmd/demo2.go
+go run cmd/demo2/main.go
 ```
 
 ### Demo 3 - Adaptive routing - Nodes terminate the call, packet relaying is no longer necessary
@@ -51,7 +51,7 @@ leave the call leaving plenty of upload bandwidth for the node that was previous
 As this is noticed, the packet relay service is adaptively cancelled as there is no longer need for it.
 
 ```
-go run cmd/demo3.go
+go run cmd/demo3/main.go
 ```
 
 ### Demo 4 - Packet routing with an uncompatible video call application
@@ -63,5 +63,5 @@ starting RTP media transport between "COMPAT" nodes, they perform RPR initiation
 on possible packet relaying procedures.
 
 ```
-go run cmd/demo4.go
+go run cmd/demo4/main.go
 ```
