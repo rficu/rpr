@@ -11,7 +11,7 @@ This repository provides an implementation of RPR and a few demo applications th
 
 So what is the value of this if it requires reinventing the wheel for video conferences and breaks compatibility with other software? [RFC 3350](https://tools.ietf.org/html/rfc3550) provides two wonderful concepts: synchronization sources (SSRC) and mixers/translators. SSRCs can be used to distinguish different participants of a session because SSRCs are unique. Translators, on the other hand, receive packets from one or more sources and send these packets to some destination without modifiying the packet. In other words, RFC 3550 supports the packet relaying concept of RPR.
 
-The "only" thing that requires outside the specification signaling is the actual packet relaying agreement between participants. The support for RPR can be signaled e.g. using a SIP INVITE messages which tells the software name and version. Application can assume that if it is conversing with itself (e.g. two Skypes are discussing) that both applications support RPR and packet relaying agreement can be reached. If the SIP INVITE message indicates that the application is conversing with an incompatible implementation (e.g. Skype and Jitsi), RPR packet relay agreement does not take place and the call is initiated the normal way. Demo 4 provides an example of this functionality and it requires **no extra functionality** from an incompatible video conference application whilst providing packet relaying capabilities for RPR-compatible applications. The reception of RPR-relayed packets should be possible by any RFC 3550 compatible implementation so what is meant here by uncompatible is RPR-uncompatibility, i.e. the RPR handshake does not take place during call initiation.
+The "only" thing that requires outside the specification signaling is the actual packet relaying agreement between participants. The support for RPR can be signaled e.g. using a SIP INVITE messages which tells the software name and version. Application can assume that if it is conversing with itself (e.g. two Skypes are discussing) that both applications support RPR and packet relaying agreement can be reached. If the SIP INVITE message indicates that the application is conversing with an incompatible implementation (e.g. Skype and Jitsi), RPR packet relay agreement does not take place and the call is initiated the normal way. Demo 3 provides an example of this functionality and it requires **no extra functionality** from an incompatible video conference application whilst providing packet relaying capabilities for RPR-compatible applications. The reception of RPR-relayed packets should be possible by any RFC 3550 compatible implementation so what is meant here by uncompatible is RPR-uncompatibility, i.e. the RPR handshake does not take place during call initiation.
 
 ## Demos
 
@@ -40,21 +40,15 @@ On top of this, one of the older participants of a call also notices that it is 
 able to send the video to everyone so it also requests packet relay service from one of
 the nodes.
 
+Later during the session, a node exits the session which is noticed by the node that
+was in need of packet relaying. This prompts the node to end the RPR agreement with
+the selected relay and the node start to send packets normally again.
+
 ```
 go run cmd/demo2/main.go
 ```
 
-### Demo 3 - Adaptive routing - Nodes terminate the call, packet relaying is no longer necessary
-
-In this demo, one node is in need of packet relaying service from another node but 2 nodes
-leave the call leaving plenty of upload bandwidth for the node that was previously congested.
-As this is noticed, the packet relay service is adaptively cancelled as there is no longer need for it.
-
-```
-go run cmd/demo3/main.go
-```
-
-### Demo 4 - Packet routing with an uncompatible video call application
+### Demo 3 - Packet routing with an uncompatible video call application
 
 In this demo, all but one node are RPR-compatible. During SIP message exchange, nodes notice
 that one node is of type "INCOMPAT" while RPR-compatible are of type "COMPAT". "COMPAT" nodes
@@ -63,5 +57,5 @@ starting RTP media transport between "COMPAT" nodes, they perform RPR initiation
 on possible packet relaying procedures.
 
 ```
-go run cmd/demo4/main.go
+go run cmd/demo3/main.go
 ```
