@@ -35,7 +35,5 @@ type Node struct {
 	Compat     string
 	Identifier int
 	Sessions   []Session
-	// Nodes       []ConnectivityInfo
-	// RtpContexts []RtpContext
-	Mtx sync.Mutex
+	Mtx        sync.Mutex
 }
