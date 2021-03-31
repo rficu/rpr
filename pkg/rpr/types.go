@@ -22,6 +22,7 @@ type RprNode struct {
 type RprContext struct {
 	Capacity      int       // how much capacity the node has left
 	Role          int       // are we client/relay/normal node
+	RelayNode     *RprNode  // selected relay node
 	RelayNodes    []RprNode // list of relay nodes we can use
 	ClientNodes   []RprNode // list of client nodes we're serving
 	ReservedNodes []RprNode // list of nodes that have reserved space

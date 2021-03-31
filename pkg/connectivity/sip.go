@@ -112,6 +112,7 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 		rpr.RprContext{
 			upload,
 			rpr.NODE_NORMAL,
+			nil,
 			[]rpr.RprNode{},
 			[]rpr.RprNode{},
 			[]rpr.RprNode{},

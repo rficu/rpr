@@ -64,7 +64,7 @@ func RprFinalize(local *Node) {
 			return
 		}
 
-		for _, relayNode := range local.Rpr.RelayNodes {
+		for i, relayNode := range local.Rpr.RelayNodes {
 			relayNode.Enc.Encode(RprMessage{
 				local.Identifier,
 				RELAY_REQUEST,
@@ -78,6 +78,9 @@ func RprFinalize(local *Node) {
 					local.Identifier,
 					RELAY_ACCEPT,
 				})
+
+				local.Rpr.Role = NODE_CLIENT
+				local.Rpr.RelayNode = &local.Rpr.RelayNodes[i]
 				break
 			}
 		}
