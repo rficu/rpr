@@ -24,7 +24,7 @@ type RprContext struct {
 	Role          int       // are we client/relay/normal node
 	RelayNode     *RprNode  // selected relay node
 	RelayNodes    []RprNode // list of relay nodes we can use
-	ClientNodes   []RprNode // list of client nodes we're serving
+	ClientNodes   []int     // list of client nodes we're serving
 	ReservedNodes []RprNode // list of nodes that have reserved space
 }
 

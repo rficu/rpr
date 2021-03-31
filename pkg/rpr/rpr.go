@@ -49,6 +49,11 @@ func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec
 			if msg.RelayType == RELAY_ACCEPT {
 				fmt.Printf("[rpr] %x: start relaying packets for %x\n",
 					uint32(local.Identifier), uint32(remote.Identifier))
+
+				// TODO this is only a temporary solution,
+				// it's fixed once the slices are converted to maps
+				local.Rpr.Role = NODE_RELAY
+				local.Rpr.ClientNodes = append(local.Rpr.ClientNodes, msg.Identifier)
 			}
 		}
 	}
