@@ -47,7 +47,8 @@ func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec
 			dec.Decode(&msg)
 
 			if msg.RelayType == RELAY_ACCEPT {
-				fmt.Printf("start relaying packets for %x\n", uint32(remote.Identifier))
+				fmt.Printf("[rpr] %x: start relaying packets for %x\n",
+					uint32(local.Identifier), uint32(remote.Identifier))
 			}
 		}
 	}
@@ -72,7 +73,8 @@ func RprFinalize(local *Node) {
 			relayNode.Dec.Decode(&msg)
 
 			if msg.RelayType == RELAY_OFFER {
-				fmt.Printf("start using %x as relay node\n", uint32(msg.Identifier))
+				fmt.Printf("[rpr] %x: start using %x as relay node\n",
+					uint32(local.Identifier), uint32(msg.Identifier))
 
 				relayNode.Enc.Encode(RprMessage{
 					local.Identifier,
@@ -202,7 +204,7 @@ func RecvData(id uint32, sess *rtp.Session) {
 		select {
 		case rp := <-dataReceiver: // just get a packet - maybe we add some tests later
 			if (cnt % 100) == 0 {
-				fmt.Printf("%x got package from %x\n", id, rp.Ssrc())
+				fmt.Printf("[rtp] %x: got package from %x\n", id, rp.Ssrc())
 			}
 			cnt++
 			rp.FreePacket()
