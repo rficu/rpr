@@ -12,6 +12,7 @@ const (
 	RELAY_RESERVE = 1 // reserve packet relay services from a relay node
 	RELAY_REQUEST = 2 // request packet relay
 	RELAY_REJECT  = 3 // reject relay reserve/request
+	RELAY_ACCEPT  = 4 // accept relay offer
 )
 
 type RprInit struct {
@@ -26,8 +27,61 @@ type RprResponse struct {
 	RelayType  int
 }
 
+type RprMessage struct {
+	Identifier int
+	RelayType  int
+}
+
+func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
+	var msg RprMessage
+
+	for {
+		dec.Decode(&msg)
+
+		if msg.RelayType == RELAY_REQUEST {
+			// TODO check if we can actually offer relaying
+			enc.Encode(RprMessage{
+				local.Identifier,
+				RELAY_OFFER,
+			})
+			dec.Decode(&msg)
+
+			if msg.RelayType == RELAY_ACCEPT {
+				fmt.Printf("start relaying packets for %x\n", uint32(remote.Identifier))
+			}
+		}
+	}
+}
+
 func RprFinalize(local *Node) {
-	// TODO
+
+	var msg RprMessage
+
+	// TODO implement proper relay node selection, for now just select the first available
+	if local.Rpr.Capacity <= 0 {
+		if len(local.Rpr.RelayNodes) == 0 {
+			fmt.Println("[rpr] warning: our capacity is full but there are no relay nodes available!")
+			return
+		}
+
+		for _, relayNode := range local.Rpr.RelayNodes {
+			relayNode.Enc.Encode(RprMessage{
+				local.Identifier,
+				RELAY_REQUEST,
+			})
+			relayNode.Dec.Decode(&msg)
+
+			if msg.RelayType == RELAY_OFFER {
+				fmt.Printf("start using %x as relay node\n", uint32(msg.Identifier))
+
+				relayNode.Enc.Encode(RprMessage{
+					local.Identifier,
+					RELAY_ACCEPT,
+				})
+				break
+			}
+		}
+	}
 }
 
 // TODO
@@ -63,6 +117,9 @@ func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	resp.Identifier = local.Identifier
 
 	enc.Encode(&resp)
+
+	// spawn a thread for this connection to listen for incoming packet relay requests
+	go rprMessageLoop(local, remote, enc, dec)
 }
 
 // TODO
