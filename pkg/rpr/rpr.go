@@ -180,24 +180,27 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	}
 }
 
+func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint32) {
+	rp := session.NewDataPacket(ts)
+	rp.SetPayload(payload[0:10])
+	rp.SetCsrcList(csrc)
+	session.WriteData(rp)
+	rp.FreePacket()
+
+}
+
 func SendData(node *Node, sess *rtp.Session, RemoteIdentifier int) {
 
-	var localPay [160]byte
 	stamp := uint32(0)
+	localPay := make([]byte, 160)
 
 	for {
 		if node.Rpr.Role == NODE_CLIENT {
 			if node.Rpr.RelayNode.Identifier == RemoteIdentifier {
-				rp := sess.NewDataPacket(stamp)
-				rp.SetPayload(localPay[:])
-				sess.WriteData(rp)
-				rp.FreePacket()
+				sendRtpPacket(sess, stamp, localPay, []uint32{})
 			}
 		} else {
-			rp := sess.NewDataPacket(stamp)
-			rp.SetPayload(localPay[:])
-			sess.WriteData(rp)
-			rp.FreePacket()
+			sendRtpPacket(sess, stamp, localPay, []uint32{})
 		}
 
 		stamp += 160
@@ -217,11 +220,12 @@ func RecvData(node *Node, sess *rtp.Session) {
 				if rp.Ssrc() == uint32(node.Rpr.ClientNodes[0]) {
 					for _, remoteNode := range node.Sessions {
 						if remoteNode.Remote.Identifier != node.Rpr.ClientNodes[0] {
-							rp2 := remoteNode.Rtp.Session.NewDataPacket(rp.Timestamp())
-							rp2.SetPayload(rp.Payload())
-							rp2.SetCsrcList([]uint32{rp.Ssrc()})
-							remoteNode.Rtp.Session.WriteData(rp2)
-							rp2.FreePacket()
+							sendRtpPacket(
+								remoteNode.Rtp.Session,
+								rp.Timestamp(),
+								rp.Payload(),
+								[]uint32{rp.Ssrc()},
+							)
 						}
 					}
 				}
