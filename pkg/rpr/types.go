@@ -43,8 +43,8 @@ type RtpContext struct {
 }
 
 type Session struct {
-	Remote     ConnectivityInfo
-	RtpContext RtpContext
+	Remote ConnectivityInfo
+	Rtp    RtpContext
 }
 
 type Node struct {

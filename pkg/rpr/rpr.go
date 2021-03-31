@@ -200,21 +200,35 @@ func SendData(sess *rtp.Session) {
 	}
 }
 
-func RecvData(id uint32, sess *rtp.Session) {
+func RecvData(node *Node, sess *rtp.Session) {
 
 	dataReceiver := sess.CreateDataReceiveChan()
 	var cnt int
 
 	for {
 		select {
-		case rp := <-dataReceiver: // just get a packet - maybe we add some tests later
-			if (cnt % 100) == 0 {
-				fmt.Printf("[rtp] %x: got package from %x\n", id, rp.Ssrc())
+		case rp := <-dataReceiver:
+			if node.Rpr.Role == NODE_RELAY {
+				if rp.Ssrc() == uint32(node.Rpr.ClientNodes[0]) {
+					for _, remoteNode := range node.Sessions {
+						if remoteNode.Remote.Identifier != node.Rpr.ClientNodes[0] {
+							rp2 := remoteNode.Rtp.Session.NewDataPacket(rp.Timestamp())
+							rp2.SetPayload(rp.Payload())
+							rp2.SetCsrcList([]uint32{rp.Ssrc()})
+							remoteNode.Rtp.Session.WriteData(rp2)
+							rp2.FreePacket()
+						}
+					}
+				}
+			}
+
+			if rp.CsrcCount() > 0 {
+				fmt.Printf("[rtp] %x: got relayed package from %x\n", uint32(node.Identifier), rp.Ssrc())
+			} else {
+				fmt.Printf("[rtp] %x: got package from %x\n", uint32(node.Identifier), rp.Ssrc())
 			}
 			cnt++
 			rp.FreePacket()
-			// case <-stopLocalRecv:
-			// 	return
 		}
 	}
 }

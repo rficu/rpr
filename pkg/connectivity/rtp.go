@@ -25,7 +25,9 @@ func StartRtpLoop(node *rpr.Node) {
 		}, uint32(node.Identifier), 0)
 		rsRemote.SsrcStreamOutForIndex(strRemoteIdx).SetPayloadType(0)
 
-		go rpr.RecvData(uint32(node.Identifier), rsRemote)
+		node.Sessions[i].Rtp.Session = rsRemote
+
+		go rpr.RecvData(node, rsRemote)
 
 		// simple RTP: just listen on the RTP and RTCP receive transports. Do not start Session.
 		rsRemote.ListenOnTransports()
