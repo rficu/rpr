@@ -39,7 +39,8 @@ func Call(us *rpr.Node, tcp int) {
 	})
 
 	dec.Decode(&theirInfo)
-	rpr.Handshake(us, &theirInfo)
+	rpr.HandshakeInitiator(us, &theirInfo, enc, dec)
+	us.Rpr.Capacity--
 
 	sess := rpr.Session{
 		theirInfo,
@@ -81,7 +82,14 @@ func sipListener(us *rpr.Node) {
 			us.Compat,
 		})
 
-		rpr.Handshake(us, &theirInfo)
+		// handshake with remote and decrease one from our capacity
+		//
+		// here the capacity calculation has been simplified
+		// for implementation's sake. In a real-world scenario,
+		// we would need estimate average bitrate for our outgoing
+		// streams and subtract that from the capacity
+		rpr.HandshakeResponder(us, &theirInfo, enc, dec)
+		us.Rpr.Capacity--
 
 		sess := rpr.Session{
 			theirInfo,
