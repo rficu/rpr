@@ -32,6 +32,6 @@ func StartRtpLoop(node *rpr.Node) {
 		// simple RTP: just listen on the RTP and RTCP receive transports. Do not start Session.
 		rsRemote.ListenOnTransports()
 
-		go rpr.SendData(rsRemote)
+		go rpr.SendData(node, rsRemote, remoteNode.Remote.Identifier)
 	}
 }

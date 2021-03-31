@@ -180,23 +180,28 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	}
 }
 
-func SendData(sess *rtp.Session) {
+func SendData(node *Node, sess *rtp.Session, RemoteIdentifier int) {
 
-	var cnt int
 	var localPay [160]byte
 	stamp := uint32(0)
 
 	for {
-		rp := sess.NewDataPacket(stamp)
-		rp.SetPayload(localPay[:])
-		sess.WriteData(rp)
-		rp.FreePacket()
-		if (cnt % 50) == 0 {
-			// fmt.Printf("Local sent %d packets\n", cnt)
+		if node.Rpr.Role == NODE_CLIENT {
+			if node.Rpr.RelayNode.Identifier == RemoteIdentifier {
+				rp := sess.NewDataPacket(stamp)
+				rp.SetPayload(localPay[:])
+				sess.WriteData(rp)
+				rp.FreePacket()
+			}
+		} else {
+			rp := sess.NewDataPacket(stamp)
+			rp.SetPayload(localPay[:])
+			sess.WriteData(rp)
+			rp.FreePacket()
 		}
-		cnt++
+
 		stamp += 160
-		time.Sleep(20e6)
+		time.Sleep(time.Second)
 	}
 }
 
