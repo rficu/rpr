@@ -6,14 +6,22 @@ import (
 	"sync"
 )
 
+const (
+	NODE_NORMAL = 0
+	NODE_RELAY  = 1
+	NODE_CLIENT = 2
+)
+
 type RprNode struct {
 	Enc        *gob.Encoder
 	Dec        *gob.Decoder
 	Identifier int
 }
 
+// TODO convert these slices to maps
 type RprContext struct {
 	Capacity      int       // how much capacity the node has left
+	Role          int       // are we client/relay/normal node
 	RelayNodes    []RprNode // list of relay nodes we can use
 	ClientNodes   []RprNode // list of client nodes we're serving
 	ReservedNodes []RprNode // list of nodes that have reserved space

@@ -111,6 +111,7 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 		rand.Int(),
 		rpr.RprContext{
 			upload,
+			rpr.NODE_NORMAL,
 			[]rpr.RprNode{},
 			[]rpr.RprNode{},
 			[]rpr.RprNode{},
