@@ -88,6 +88,7 @@ func RprFinalize(local *Node) {
 
 				local.Rpr.Role = NODE_CLIENT
 				local.Rpr.RelayNode = &local.Rpr.RelayNodes[i]
+				local.Rpr.Capacity = len(local.Sessions) - 1
 				break
 			}
 		}
