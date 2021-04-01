@@ -40,7 +40,6 @@ func Call(us *rpr.Node, tcp int) {
 
 	dec.Decode(&theirInfo)
 	rpr.HandshakeInitiator(us, &theirInfo, enc, dec)
-	us.Rpr.Capacity--
 
 	sess := rpr.Session{
 		theirInfo,
@@ -89,7 +88,6 @@ func sipListener(us *rpr.Node) {
 		// we would need estimate average bitrate for our outgoing
 		// streams and subtract that from the capacity
 		rpr.HandshakeResponder(us, &theirInfo, enc, dec)
-		us.Rpr.Capacity--
 
 		sess := rpr.Session{
 			theirInfo,
@@ -113,8 +111,6 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 			upload,
 			rpr.NODE_NORMAL,
 			rpr.RprNode{},
-			map[uint32]rpr.RprNode{},
-			map[uint32]rpr.RprNode{},
 			map[uint32]rpr.RprNode{},
 		},
 		[]rpr.Session{},

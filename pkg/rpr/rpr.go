@@ -8,12 +8,18 @@ import (
 )
 
 const (
-	RELAY_OFFER   = 0 // offer relay service if there's capacity available
-	RELAY_RESERVE = 1 // reserve packet relay services from a relay node
-	RELAY_REQUEST = 2 // request packet relay
-	RELAY_REJECT  = 3 // reject relay reserve/request
-	RELAY_ACCEPT  = 4 // accept relay offer
+	RELAY_DISCOVER = 0 // todo
+	RELAY_OFFER    = 1 // offer relay service if there's capacity available
+	RELAY_RESERVE  = 2 // reserve packet relay services from a relay node
+	RELAY_REQUEST  = 3 // request packet relay
+	RELAY_REJECT   = 4 // reject relay reserve/request
+	RELAY_ACCEPT   = 5 // accept relay offer
 )
+
+type RprMessage struct {
+	Identifier uint32
+	RelayType  int
+}
 
 type RprInit struct {
 	Identifier uint32
@@ -27,34 +33,69 @@ type RprResponse struct {
 	RelayType  int
 }
 
-type RprMessage struct {
-	Identifier uint32
-	RelayType  int
+func rprRequestRelay(node *Node) bool {
+
+	var msg RprMessage
+
+	for _, relayNode := range node.Rpr.Nodes {
+		relayNode.Enc.Encode(RprMessage{
+			node.Identifier,
+			RELAY_REQUEST,
+		})
+		relayNode.Dec.Decode(&msg)
+
+		if msg.RelayType == RELAY_OFFER {
+			fmt.Printf("[rpr] %x: start using %x as relay node\n",
+				uint32(node.Identifier), uint32(msg.Identifier))
+
+			relayNode.Enc.Encode(RprMessage{
+				node.Identifier,
+				RELAY_ACCEPT,
+			})
+
+			node.Rpr.Role = NODE_CLIENT
+			node.Rpr.Node = relayNode
+			delete(node.Rpr.Nodes, msg.Identifier)
+			return true
+		}
+	}
+
+	return false
 }
 
 func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
+
 	var msg RprMessage
 
 	for {
 		dec.Decode(&msg)
 
 		if msg.RelayType == RELAY_REQUEST {
-			if _, ok := local.Rpr.ReservedNodes[msg.Identifier]; ok {
+
+			// we don't have enough capacity or are already acting as a relay for someone else
+			// TODO calculate our capacity correctly
+			if local.Rpr.Capacity <= len(local.Sessions) || local.Rpr.Role == NODE_RELAY {
 				enc.Encode(RprMessage{
 					local.Identifier,
-					RELAY_OFFER,
+					RELAY_REJECT,
 				})
-				dec.Decode(&msg)
+			}
 
-				if msg.RelayType == RELAY_ACCEPT {
-					fmt.Printf("[rpr] %x: start relaying packets for %x\n",
-						uint32(local.Identifier), uint32(remote.Identifier))
+			enc.Encode(RprMessage{
+				local.Identifier,
+				RELAY_OFFER,
+			})
+			dec.Decode(&msg)
 
-					local.Rpr.Role = NODE_RELAY
-					client, _ := local.Rpr.ReservedNodes[msg.Identifier]
-					delete(local.Rpr.ReservedNodes, msg.Identifier)
-					local.Rpr.ClientNodes[msg.Identifier] = client
-				}
+			if msg.RelayType == RELAY_ACCEPT {
+				fmt.Printf("[rpr] %x: start relaying packets for %x\n",
+					uint32(local.Identifier), uint32(msg.Identifier))
+
+				client, _ := local.Rpr.Nodes[msg.Identifier]
+				delete(local.Rpr.Nodes, msg.Identifier)
+
+				local.Rpr.Node = client
+				local.Rpr.Role = NODE_RELAY
 			}
 		}
 	}
@@ -62,126 +103,61 @@ func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec
 
 func RprFinalize(local *Node) {
 
-	var msg RprMessage
-	_ = msg
-
-	// TODO implement proper relay node selection, for now just select the first available
-	if local.Rpr.Capacity <= 0 {
-		if len(local.Rpr.RelayNodes) == 0 {
+	if local.Rpr.Capacity <= len(local.Sessions) {
+		if len(local.Rpr.Nodes) == 0 {
 			fmt.Println("[rpr] warning: our capacity is full but there are no relay nodes available!")
 			return
 		}
 
-		for _, relayNode := range local.Rpr.RelayNodes {
-			relayNode.Enc.Encode(RprMessage{
-				local.Identifier,
-				RELAY_REQUEST,
-			})
-			relayNode.Dec.Decode(&msg)
-
-			if msg.RelayType == RELAY_OFFER {
-				fmt.Printf("[rpr] %x: start using %x as relay node\n",
-					uint32(local.Identifier), uint32(msg.Identifier))
-
-				relayNode.Enc.Encode(RprMessage{
-					local.Identifier,
-					RELAY_ACCEPT,
-				})
-
-				local.Rpr.Role = NODE_CLIENT
-				local.Rpr.RelayNode = relayNode
-				local.Rpr.Capacity = len(local.Sessions) - 1
-				delete(local.Rpr.RelayNodes, msg.Identifier)
-				break
-			}
+		if rprRequestRelay(local) == false {
+			fmt.Printf("[rpr] warning: failed to find suitable relay node for us!\n")
 		}
 	}
 }
 
-// TODO
 func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
 
 	if remote.Compat != "COMPAT" {
 		return
 	}
 
-	// read init message from initiator and based on RelayType, craft RprResponse
-	var init RprInit
-	var resp RprResponse
+	var msg RprInit
 
-	dec.Decode(&init)
+	dec.Decode(&msg)
+	enc.Encode(RprInit{
+		local.Identifier,
+		local.Upload,
+		RELAY_DISCOVER,
+	})
 
-	if init.RelayType == RELAY_RESERVE {
-		if local.Rpr.Capacity > 2 {
-			local.Rpr.ReservedNodes[remote.Identifier] = RprNode{
-				enc,
-				dec,
-				remote.Identifier,
-			}
-		}
-	} else if init.RelayType == RELAY_OFFER {
-		local.Rpr.RelayNodes[remote.Identifier] = RprNode{
-			enc,
-			dec,
-			remote.Identifier,
-		}
+	local.Rpr.Nodes[msg.Identifier] = RprNode{
+		enc, dec, remote.Identifier, msg.Capacity,
 	}
-
-	resp.Capacity = local.Rpr.Capacity
-	resp.Identifier = local.Identifier
-
-	enc.Encode(&resp)
+	local.Rpr.Capacity = local.Upload
 
 	// spawn a thread for this connection to listen for incoming packet relay requests
 	go rprMessageLoop(local, remote, enc, dec)
 }
 
-// TODO
 func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
 
 	if remote.Compat != "COMPAT" {
 		return
 	}
 
-	var init RprInit
 	var resp RprResponse
 
-	// if our capacity is running low, ask if the node
-	// could relay packets for us
-	//
-	// at this point we're only reserving a possible slot
-	// as we don't know how many other relay nodes there
-	// are available and with what characteristics (available
-	// capacity, topology, latency etc.)
-	//
-	// if we have capacity, we offer it for the remote node
-	init.Capacity = local.Rpr.Capacity
-	init.Identifier = local.Identifier
-
-	if local.Rpr.Capacity <= 2 {
-		init.RelayType = RELAY_RESERVE
-	} else {
-		init.RelayType = RELAY_OFFER
-	}
-
-	enc.Encode(&init)
+	enc.Encode(RprInit{
+		local.Identifier,
+		local.Upload,
+		RELAY_DISCOVER,
+	})
 	dec.Decode(&resp)
 
-	if resp.RelayType == RELAY_OFFER {
-		local.Rpr.RelayNodes[remote.Identifier] = RprNode{
-			enc,
-			dec,
-			remote.Identifier,
-		}
-	} else if resp.RelayType == RELAY_RESERVE {
-		if init.RelayType == RELAY_OFFER {
-			local.Rpr.ReservedNodes[remote.Identifier] = RprNode{
-				enc,
-				dec,
-				remote.Identifier,
-			}
-		}
+	local.Rpr.Nodes[resp.Identifier] = RprNode{
+		enc, dec, remote.Identifier, resp.Capacity,
 	}
+	local.Rpr.Capacity = local.Upload
 }
 
 func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint32) {
@@ -190,7 +166,6 @@ func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint3
 	rp.SetCsrcList(csrc)
 	session.WriteData(rp)
 	rp.FreePacket()
-
 }
 
 func SendData(node *Node, sess *rtp.Session, RemoteIdentifier uint32) {
@@ -200,7 +175,7 @@ func SendData(node *Node, sess *rtp.Session, RemoteIdentifier uint32) {
 
 	for {
 		if node.Rpr.Role == NODE_CLIENT {
-			if node.Rpr.RelayNode.Identifier == RemoteIdentifier {
+			if node.Rpr.Node.Identifier == RemoteIdentifier {
 				sendRtpPacket(sess, stamp, localPay, []uint32{})
 			}
 		} else {
@@ -221,7 +196,7 @@ func RecvData(node *Node, sess *rtp.Session) {
 		select {
 		case rp := <-dataReceiver:
 			if node.Rpr.Role == NODE_RELAY {
-				if _, ok := node.Rpr.ClientNodes[rp.Ssrc()]; ok {
+				if node.Rpr.Node.Identifier == rp.Ssrc() {
 					for _, remoteNode := range node.Sessions {
 						if remoteNode.Remote.Identifier != rp.Ssrc() {
 							sendRtpPacket(

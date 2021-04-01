@@ -16,16 +16,14 @@ type RprNode struct {
 	Enc        *gob.Encoder
 	Dec        *gob.Decoder
 	Identifier uint32
+	Capacity   int
 }
 
-// TODO convert these slices to maps
 type RprContext struct {
-	Capacity      int                // how much capacity the node has left
-	Role          int                // are we client/relay/normal node
-	RelayNode     RprNode            // selected relay node
-	ClientNodes   map[uint32]RprNode // list of client nodes we're serving
-	RelayNodes    map[uint32]RprNode // list of relay nodes we can use
-	ReservedNodes map[uint32]RprNode // list of nodes that have reserved space
+	Role     int                // are we client/relay/normal node
+	Capacity int                // TODO
+	Node     RprNode            // selected relay/client node
+	Nodes    map[uint32]RprNode // all nodes of the session that support rpr
 }
 
 type ConnectivityInfo struct {
