@@ -22,7 +22,7 @@ func StartRtpLoop(node *rpr.Node) {
 			remotePort,
 			remotePort,
 			"",
-		}, uint32(node.Identifier), 0)
+		}, node.Identifier, 0)
 		rsRemote.SsrcStreamOutForIndex(strRemoteIdx).SetPayloadType(0)
 
 		node.Sessions[i].Rtp.Session = rsRemote

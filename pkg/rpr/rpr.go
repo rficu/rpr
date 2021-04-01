@@ -16,19 +16,19 @@ const (
 )
 
 type RprInit struct {
-	Identifier int
+	Identifier uint32
 	Capacity   int
 	RelayType  int
 }
 
 type RprResponse struct {
-	Identifier int
+	Identifier uint32
 	Capacity   int
 	RelayType  int
 }
 
 type RprMessage struct {
-	Identifier int
+	Identifier uint32
 	RelayType  int
 }
 
@@ -39,21 +39,22 @@ func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec
 		dec.Decode(&msg)
 
 		if msg.RelayType == RELAY_REQUEST {
-			// TODO check if we can actually offer relaying
-			enc.Encode(RprMessage{
-				local.Identifier,
-				RELAY_OFFER,
-			})
-			dec.Decode(&msg)
+			if _, ok := local.Rpr.ReservedNodes[msg.Identifier]; ok {
+				enc.Encode(RprMessage{
+					local.Identifier,
+					RELAY_OFFER,
+				})
+				dec.Decode(&msg)
 
-			if msg.RelayType == RELAY_ACCEPT {
-				fmt.Printf("[rpr] %x: start relaying packets for %x\n",
-					uint32(local.Identifier), uint32(remote.Identifier))
+				if msg.RelayType == RELAY_ACCEPT {
+					fmt.Printf("[rpr] %x: start relaying packets for %x\n",
+						uint32(local.Identifier), uint32(remote.Identifier))
 
-				// TODO this is only a temporary solution,
-				// it's fixed once the slices are converted to maps
-				local.Rpr.Role = NODE_RELAY
-				local.Rpr.ClientNodes = append(local.Rpr.ClientNodes, msg.Identifier)
+					local.Rpr.Role = NODE_RELAY
+					client, _ := local.Rpr.ReservedNodes[msg.Identifier]
+					delete(local.Rpr.ReservedNodes, msg.Identifier)
+					local.Rpr.ClientNodes[msg.Identifier] = client
+				}
 			}
 		}
 	}
@@ -62,6 +63,7 @@ func rprMessageLoop(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec
 func RprFinalize(local *Node) {
 
 	var msg RprMessage
+	_ = msg
 
 	// TODO implement proper relay node selection, for now just select the first available
 	if local.Rpr.Capacity <= 0 {
@@ -70,7 +72,7 @@ func RprFinalize(local *Node) {
 			return
 		}
 
-		for i, relayNode := range local.Rpr.RelayNodes {
+		for _, relayNode := range local.Rpr.RelayNodes {
 			relayNode.Enc.Encode(RprMessage{
 				local.Identifier,
 				RELAY_REQUEST,
@@ -87,8 +89,9 @@ func RprFinalize(local *Node) {
 				})
 
 				local.Rpr.Role = NODE_CLIENT
-				local.Rpr.RelayNode = &local.Rpr.RelayNodes[i]
+				local.Rpr.RelayNode = relayNode
 				local.Rpr.Capacity = len(local.Sessions) - 1
+				delete(local.Rpr.RelayNodes, msg.Identifier)
 				break
 			}
 		}
@@ -110,18 +113,18 @@ func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 
 	if init.RelayType == RELAY_RESERVE {
 		if local.Rpr.Capacity > 2 {
-			local.Rpr.ReservedNodes = append(local.Rpr.ReservedNodes, RprNode{
+			local.Rpr.ReservedNodes[remote.Identifier] = RprNode{
 				enc,
 				dec,
 				remote.Identifier,
-			})
+			}
 		}
 	} else if init.RelayType == RELAY_OFFER {
-		local.Rpr.RelayNodes = append(local.Rpr.RelayNodes, RprNode{
+		local.Rpr.RelayNodes[remote.Identifier] = RprNode{
 			enc,
 			dec,
 			remote.Identifier,
-		})
+		}
 	}
 
 	resp.Capacity = local.Rpr.Capacity
@@ -165,18 +168,18 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	dec.Decode(&resp)
 
 	if resp.RelayType == RELAY_OFFER {
-		local.Rpr.RelayNodes = append(local.Rpr.RelayNodes, RprNode{
+		local.Rpr.RelayNodes[remote.Identifier] = RprNode{
 			enc,
 			dec,
 			remote.Identifier,
-		})
+		}
 	} else if resp.RelayType == RELAY_RESERVE {
 		if init.RelayType == RELAY_OFFER {
-			local.Rpr.ReservedNodes = append(local.Rpr.ReservedNodes, RprNode{
+			local.Rpr.ReservedNodes[remote.Identifier] = RprNode{
 				enc,
 				dec,
 				remote.Identifier,
-			})
+			}
 		}
 	}
 }
@@ -190,7 +193,7 @@ func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint3
 
 }
 
-func SendData(node *Node, sess *rtp.Session, RemoteIdentifier int) {
+func SendData(node *Node, sess *rtp.Session, RemoteIdentifier uint32) {
 
 	stamp := uint32(0)
 	localPay := make([]byte, 160)
@@ -218,9 +221,9 @@ func RecvData(node *Node, sess *rtp.Session) {
 		select {
 		case rp := <-dataReceiver:
 			if node.Rpr.Role == NODE_RELAY {
-				if rp.Ssrc() == uint32(node.Rpr.ClientNodes[0]) {
+				if _, ok := node.Rpr.ClientNodes[rp.Ssrc()]; ok {
 					for _, remoteNode := range node.Sessions {
-						if remoteNode.Remote.Identifier != node.Rpr.ClientNodes[0] {
+						if remoteNode.Remote.Identifier != rp.Ssrc() {
 							sendRtpPacket(
 								remoteNode.Rtp.Session,
 								rp.Timestamp(),

@@ -15,21 +15,21 @@ const (
 type RprNode struct {
 	Enc        *gob.Encoder
 	Dec        *gob.Decoder
-	Identifier int
+	Identifier uint32
 }
 
 // TODO convert these slices to maps
 type RprContext struct {
-	Capacity      int       // how much capacity the node has left
-	Role          int       // are we client/relay/normal node
-	RelayNode     *RprNode  // selected relay node
-	RelayNodes    []RprNode // list of relay nodes we can use
-	ClientNodes   []int     // list of client nodes we're serving
-	ReservedNodes []RprNode // list of nodes that have reserved space
+	Capacity      int                // how much capacity the node has left
+	Role          int                // are we client/relay/normal node
+	RelayNode     RprNode            // selected relay node
+	ClientNodes   map[uint32]RprNode // list of client nodes we're serving
+	RelayNodes    map[uint32]RprNode // list of relay nodes we can use
+	ReservedNodes map[uint32]RprNode // list of nodes that have reserved space
 }
 
 type ConnectivityInfo struct {
-	Identifier int
+	Identifier uint32
 	Rtp        int
 	Upload     int
 	Download   int
@@ -53,7 +53,7 @@ type Node struct {
 	Upload     int
 	Download   int
 	Compat     string
-	Identifier int
+	Identifier uint32
 	Rpr        RprContext
 	Sessions   []Session
 	Mtx        sync.Mutex
