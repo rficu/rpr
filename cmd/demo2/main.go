@@ -18,23 +18,13 @@ func main() {
 	connectivity.Call(node3, node2.Tcp)
 	connectivity.Call(node3, node1.Tcp)
 
-	// finally start the rtp loops, i.e., start exchanging rtp packets
-	connectivity.StartRtpLoop(node1)
-	connectivity.StartRtpLoop(node2)
-	connectivity.StartRtpLoop(node3)
-
 	time.Sleep(2 * time.Second)
 
-	node4 := connectivity.CreateNode(25000, 24002, 10, 20, "COMPAT")
+	node4 := connectivity.CreateNode(25000, 25002, 10, 20, "COMPAT")
 
 	connectivity.Call(node4, node1.Tcp)
 	connectivity.Call(node4, node2.Tcp)
 	connectivity.Call(node4, node3.Tcp)
-
-	connectivity.StartRtpLoop(node1)
-	connectivity.StartRtpLoop(node2)
-	connectivity.StartRtpLoop(node3)
-	connectivity.StartRtpLoop(node4)
 
 	for {
 	}
