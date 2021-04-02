@@ -44,8 +44,13 @@ func Call(us *rpr.Node, tcp int) {
 
 	sess := rpr.Session{
 		theirInfo,
-		rpr.RtpContext{},
+		rpr.RtpContext{
+			rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
+		},
 	}
+
+	go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
+	go rpr.RecvData(us, sess.Rtp.Session)
 
 	us.Sessions = append(us.Sessions, sess)
 	us.Mtx.Unlock()
@@ -92,8 +97,13 @@ func sipListener(us *rpr.Node) {
 
 		sess := rpr.Session{
 			theirInfo,
-			rpr.RtpContext{},
+			rpr.RtpContext{
+				rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
+			},
 		}
+
+		go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
+		go rpr.RecvData(us, sess.Rtp.Session)
 
 		us.Sessions = append(us.Sessions, sess)
 		us.Mtx.Unlock()
@@ -125,17 +135,4 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 	go rpr.RprMainLoop(&ret)
 
 	return &ret
-}
-
-func StartRtpLoop(local *rpr.Node, remotes []*rpr.Node) {
-
-	for i, remote := range local.Sessions {
-		session := rtp.CreateSession("127.0.0.1", local.Rtp, remote.Remote.Rtp)
-		local.Rtp += 2
-
-		local.Sessions[i].Rtp.Session = session
-
-		go rpr.SendData(local, session, remote.Remote.Identifier)
-		go rpr.RecvData(local, session)
-	}
 }
