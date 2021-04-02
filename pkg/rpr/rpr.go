@@ -78,6 +78,11 @@ func RprMainLoop(node *Node) {
 					return
 				}
 
+				if node.Rpr.Role == NODE_CLIENT {
+					fmt.Printf("[rpr] our capacity is maxed but we're already utilizing packet relaying!\n")
+					return
+				}
+
 				buildRelayList(node)
 				contactRelayNode(node)
 			}
