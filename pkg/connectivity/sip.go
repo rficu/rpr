@@ -112,10 +112,16 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 			rpr.NODE_NORMAL,
 			rpr.RprNode{},
 			map[uint32]rpr.RprNode{},
+			[]rpr.RprNode{},
+			make(chan bool),
+			make(chan rpr.RprMessage),
 		},
 		[]rpr.Session{},
 		sync.Mutex{},
 	}
+
 	go sipListener(&ret)
+	go rpr.RprMainLoop(&ret)
+
 	return &ret
 }

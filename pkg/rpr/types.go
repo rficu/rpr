@@ -12,18 +12,27 @@ const (
 	NODE_CLIENT = 2
 )
 
+type RprMessage struct {
+	Identifier uint32
+	RelayType  int
+}
+
 type RprNode struct {
 	Enc        *gob.Encoder
 	Dec        *gob.Decoder
 	Identifier uint32
 	Capacity   int
+	MsgHandled chan bool // TODO
 }
 
 type RprContext struct {
-	Role     int                // are we client/relay/normal node
-	Capacity int                // TODO
-	Node     RprNode            // selected relay/client node
-	Nodes    map[uint32]RprNode // all nodes of the session that support rpr
+	Role        int                // are we client/relay/normal node
+	Capacity    int                // TODO
+	Node        RprNode            // selected relay/client node
+	Nodes       map[uint32]RprNode // all nodes of the session that support rpr
+	Candidates  []RprNode          // TODO
+	NodeJoined  chan bool          // TODO
+	MsgReceived chan RprMessage    // TODO
 }
 
 type ConnectivityInfo struct {
