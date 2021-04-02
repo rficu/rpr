@@ -48,6 +48,7 @@ func Call(us *rpr.Node, tcp int) {
 			rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
 		},
 	}
+	us.Rpr.Role = rpr.NODE_NORMAL
 
 	us.Sessions = append(us.Sessions, sess)
 	us.Rpr.NodeJoined <- true
