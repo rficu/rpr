@@ -5,9 +5,8 @@ RPR is a scheme for allocating upload bandwidth from other participants of a vid
 If you're interested in the idea behind this project, please read [this](https://vizardy.net/blog/scaling_to_infinity.html) and [this](https://vizardy.net/blog/scaling_to_infinity_v2.html) blogpost about it.
 
 This repository provides an implementation of RPR and a few demo applications that showcase the functionality of the protocol. Because the main point is to showcase the protocol, the implementation is very verbose and cuts some corners. For example, the demo applications assume that a constant 1 Mbps of video is sent and fake values for upload bandwidth are used instead of finding the actual values.
-[GoRTP](https://github.com/wernerd/GoRTP) is used as the RTP implementation. Due to my inexperience with this library, I cannot get it to send an RTP packet with an SSRC other than the one that is bound to the created session and that is why CSRC is used to signal the original source instead.
 
-`pkg/rpr` contains the actual protocol implementation and RTP send and receiver functions that are modified to support packet relaying. `pkg/connectivity` contains code related to call initiation and is not part of the actual protocol.
+`pkg/rpr` contains the actual protocol implementation and RTP send and receiver functions that are modified to support packet relaying. `pkg/connectivity` contains code related to call initiation and is not part of the actual protocol. `pkg/rtp` contains a very tiny RTP implementation that only implements the necessary stuff from RFC 3550 to make this work.
 
 ## Interoperability
 
@@ -16,12 +15,6 @@ So what is the value of this if it requires reinventing the wheel for video conf
 The "only" thing that requires outside the specification signaling is the actual packet relaying agreement between participants. The support for RPR can be signaled e.g. using a SIP INVITE messages which tells the software name and version. Application can assume that if it is conversing with itself (e.g. two Skypes are discussing) that both applications support RPR and packet relaying agreement can be reached. If the SIP INVITE message indicates that the application is conversing with an incompatible implementation (e.g. Skype and Jitsi), RPR packet relay agreement does not take place and the call is initiated the normal way. Demo 3 provides an example of this functionality and it requires **no extra functionality** from an incompatible video conference application whilst providing packet relaying capabilities for RPR-compatible applications. The reception of RPR-relayed packets should be possible by any RFC 3550 compatible implementation so what is meant here by uncompatible is RPR-uncompatibility, i.e., the RPR handshake does not take place during call initiation.
 
 ## Demos
-
-For simplicity's sake, the SIP part of the call initiation dialog is removed and only a dummy SIP INVITE is sent when the call is initiated. Once SIP INVITE and SIP 200 OK messages have been exchanged, both participants know each other RPR-related capabilities. If RPR is not supported (or assumed that it is not supported), the call starts immediately as RTP ports for media are transported in the SIP messages.
-
-If, on the other hand, RPR is supported by both participants, the RTP media exchange is preceeded by RPR initiation procedure.
-
-The RPR functionality has been extracted into these very simple application to make them easier to understand. Everything could be crammed into one large application but it's harder to pinpoint different aspects of RPR that way.
 
 ### Demo 1 - Routing decision done during call initiation
 
@@ -56,4 +49,13 @@ on possible packet relaying procedures.
 
 ```
 go run cmd/demo3/main.go
+```
+
+### Demo 4 - Relay-initiated handover
+
+Client- and relay-initiated handovers are otherwise the same but with relay-initiated handovers
+there's an extra step where the 
+
+```
+go run cmd/demo4/main.go
 ```
