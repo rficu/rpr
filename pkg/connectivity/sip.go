@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/rficu/rpr/pkg/rpr"
+	"github.com/rficu/rpr/pkg/rtp"
 	"math/rand"
 	"net"
 	"sync"
@@ -124,4 +125,17 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 	go rpr.RprMainLoop(&ret)
 
 	return &ret
+}
+
+func StartRtpLoop(local *rpr.Node, remotes []*rpr.Node) {
+
+	for i, remote := range local.Sessions {
+		session := rtp.CreateSession("127.0.0.1", local.Rtp, remote.Remote.Rtp)
+		local.Rtp += 2
+
+		local.Sessions[i].Rtp.Session = session
+
+		go rpr.SendData(local, session, remote.Remote.Identifier)
+		go rpr.RecvData(local, session)
+	}
 }

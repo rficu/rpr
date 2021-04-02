@@ -2,7 +2,7 @@ package rpr
 
 import (
 	"encoding/gob"
-	"github.com/wernerd/GoRTP/src/net/rtp"
+	"github.com/rficu/rpr/pkg/rtp"
 	"sync"
 )
 
@@ -44,10 +44,7 @@ type ConnectivityInfo struct {
 }
 
 type RtpContext struct {
-	Session       *rtp.Session
-	StopLocalRecv chan bool
-	Stop          bool
-	Initialized   bool
+	Session *rtp.Rtp
 }
 
 type Session struct {

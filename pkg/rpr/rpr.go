@@ -3,7 +3,7 @@ package rpr
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/wernerd/GoRTP/src/net/rtp"
+	"github.com/rficu/rpr/pkg/rtp"
 	"sort"
 	"time"
 )
@@ -187,31 +187,18 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	local.Rpr.NodeJoined <- true
 }
 
-func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint32) {
-
-	if session == nil {
-		return
-	}
-
-	rp := session.NewDataPacket(ts)
-	rp.SetPayload(payload[0:10])
-	rp.SetCsrcList(csrc)
-	session.WriteData(rp)
-	rp.FreePacket()
-}
-
-func SendData(node *Node, sess *rtp.Session, RemoteIdentifier uint32) {
+func SendData(node *Node, session *rtp.Rtp, RemoteIdentifier uint32) {
 
 	stamp := uint32(0)
-	localPay := make([]byte, 160)
+	var payload [10]byte
 
 	for {
 		if node.Rpr.Role == NODE_CLIENT {
 			if node.Rpr.Node.Identifier == RemoteIdentifier {
-				sendRtpPacket(sess, stamp, localPay, []uint32{})
+				session.SendPacket(node.Identifier, stamp, []uint32{}, payload)
 			}
 		} else {
-			sendRtpPacket(sess, stamp, localPay, []uint32{})
+			session.SendPacket(node.Identifier, stamp, []uint32{}, payload)
 		}
 
 		stamp += 160
@@ -219,36 +206,31 @@ func SendData(node *Node, sess *rtp.Session, RemoteIdentifier uint32) {
 	}
 }
 
-func RecvData(node *Node, sess *rtp.Session) {
-
-	dataReceiver := sess.CreateDataReceiveChan()
-	var cnt int
-
+func RecvData(node *Node, session *rtp.Rtp) {
 	for {
 		select {
-		case rp := <-dataReceiver:
+		case packet := <-session.PacketReceived:
 			if node.Rpr.Role == NODE_RELAY {
-				if node.Rpr.Node.Identifier == rp.Ssrc() {
+				if node.Rpr.Node.Identifier == packet.Ssrc {
 					for _, remoteNode := range node.Sessions {
-						if remoteNode.Remote.Identifier != rp.Ssrc() {
-							sendRtpPacket(
-								remoteNode.Rtp.Session,
-								rp.Timestamp(),
-								rp.Payload(),
-								[]uint32{rp.Ssrc()},
+						if remoteNode.Remote.Identifier != packet.Ssrc {
+							remoteNode.Rtp.Session.SendPacket(
+								node.Rpr.Node.Identifier,
+								packet.Timestamp,
+								[]uint32{node.Identifier},
+								packet.Payload,
 							)
 						}
 					}
 				}
 			}
 
-			if rp.CsrcCount() > 0 {
-				fmt.Printf("[rtp] %x: got relayed package from %x\n", uint32(node.Identifier), rp.Ssrc())
+			if len(packet.Csrc) > 0 {
+				fmt.Printf("[rtp] %x: got relayed package from %x (%x)\n",
+					uint32(node.Identifier), packet.Ssrc, packet.Csrc[0])
 			} else {
-				fmt.Printf("[rtp] %x: got package from %x\n", uint32(node.Identifier), rp.Ssrc())
+				fmt.Printf("[rtp] %x: got package from %x\n", uint32(node.Identifier), packet.Ssrc)
 			}
-			cnt++
-			rp.FreePacket()
 		}
 	}
 }
