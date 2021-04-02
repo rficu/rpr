@@ -78,7 +78,6 @@ func RprMainLoop(node *Node) {
 					return
 				}
 
-				// TODO
 				buildRelayList(node)
 				contactRelayNode(node)
 			}
@@ -210,18 +209,18 @@ func RecvData(node *Node, session *rtp.Rtp) {
 	for {
 		select {
 		case packet := <-session.PacketReceived:
-			if node.Rpr.Role == NODE_RELAY {
-				if node.Rpr.Node.Identifier == packet.Ssrc {
-					for _, remoteNode := range node.Sessions {
-						if remoteNode.Remote.Identifier != packet.Ssrc {
-							remoteNode.Rtp.Session.SendPacket(
-								node.Rpr.Node.Identifier,
-								packet.Timestamp,
-								[]uint32{node.Identifier},
-								packet.Payload,
-							)
-						}
+			if node.Rpr.Role == NODE_RELAY && node.Rpr.Node.Identifier == packet.Ssrc {
+				for _, remoteNode := range node.Sessions {
+					if remoteNode.Remote.Identifier == packet.Ssrc {
+						continue
 					}
+
+					remoteNode.Rtp.Session.SendPacket(
+						node.Rpr.Node.Identifier,
+						packet.Timestamp,
+						[]uint32{node.Identifier},
+						packet.Payload,
+					)
 				}
 			}
 
