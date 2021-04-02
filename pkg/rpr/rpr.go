@@ -188,6 +188,11 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 }
 
 func sendRtpPacket(session *rtp.Session, ts uint32, payload []byte, csrc []uint32) {
+
+	if session == nil {
+		return
+	}
+
 	rp := session.NewDataPacket(ts)
 	rp.SetPayload(payload[0:10])
 	rp.SetCsrcList(csrc)

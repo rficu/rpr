@@ -12,6 +12,10 @@ func StartRtpLoop(node *rpr.Node) {
 	var rsRemote *rtp.Session
 
 	for i, remoteNode := range node.Sessions {
+		if node.Sessions[i].Rtp.Initialized {
+			continue
+		}
+
 		remotePort := remoteNode.Remote.Rtp
 		tpRemote, _ := rtp.NewTransportUDP(addr, remotePort, "")
 		rsRemote = rtp.NewSession(tpRemote, tpRemote)
@@ -26,6 +30,7 @@ func StartRtpLoop(node *rpr.Node) {
 		rsRemote.SsrcStreamOutForIndex(strRemoteIdx).SetPayloadType(0)
 
 		node.Sessions[i].Rtp.Session = rsRemote
+		node.Sessions[i].Rtp.Initialized = true
 
 		go rpr.RecvData(node, rsRemote)
 

@@ -47,6 +47,7 @@ type RtpContext struct {
 	Session       *rtp.Session
 	StopLocalRecv chan bool
 	Stop          bool
+	Initialized   bool
 }
 
 type Session struct {
