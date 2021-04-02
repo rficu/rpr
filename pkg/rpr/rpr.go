@@ -11,10 +11,9 @@ import (
 const (
 	RELAY_DISCOVER = 0 // TODO
 	RELAY_OFFER    = 1 // offer relay service if there's capacity available
-	RELAY_RESERVE  = 2 // reserve packet relay services from a relay node
-	RELAY_REQUEST  = 3 // request packet relay
-	RELAY_REJECT   = 4 // reject relay reserve/request
-	RELAY_ACCEPT   = 5 // accept relay offer
+	RELAY_REQUEST  = 2 // request packet relay
+	RELAY_REJECT   = 3 // reject relay reserve/request
+	RELAY_ACCEPT   = 4 // accept relay offer
 )
 
 type RprInit struct {
