@@ -159,7 +159,6 @@ func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 
 	// spawn a thread for this connection to listen for incoming packet relay requests
 	go rprMessageLoop(local, msg.Identifier)
-	local.Rpr.NodeJoined <- true
 }
 
 func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
@@ -183,7 +182,6 @@ func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 	local.Rpr.Capacity = local.Upload
 
 	go rprMessageLoop(local, resp.Identifier)
-	local.Rpr.NodeJoined <- true
 }
 
 func SendData(node *Node, session *rtp.Rtp, RemoteIdentifier uint32) {

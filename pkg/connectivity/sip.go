@@ -49,10 +49,12 @@ func Call(us *rpr.Node, tcp int) {
 		},
 	}
 
+	us.Sessions = append(us.Sessions, sess)
+	us.Rpr.NodeJoined <- true
+
 	go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
 	go rpr.RecvData(us, sess.Rtp.Session)
 
-	us.Sessions = append(us.Sessions, sess)
 	us.Mtx.Unlock()
 }
 
@@ -102,10 +104,12 @@ func sipListener(us *rpr.Node) {
 			},
 		}
 
+		us.Sessions = append(us.Sessions, sess)
+		us.Rpr.NodeJoined <- true
+
 		go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
 		go rpr.RecvData(us, sess.Rtp.Session)
 
-		us.Sessions = append(us.Sessions, sess)
 		us.Mtx.Unlock()
 	}
 }
