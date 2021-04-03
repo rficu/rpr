@@ -75,12 +75,12 @@ func RprMainLoop(node *Node) {
 			if node.Rpr.Capacity <= len(node.Sessions) {
 				if len(node.Rpr.Nodes) == 0 {
 					fmt.Println("[rpr] warning: our capacity is full but there are no relay nodes available!")
-					return
+					break
 				}
 
 				if node.Rpr.Role == NODE_CLIENT {
 					fmt.Printf("[rpr] info: our capacity is maxed but we're already utilizing packet relaying!\n")
-					return
+					break
 				}
 
 				buildRelayList(node)
