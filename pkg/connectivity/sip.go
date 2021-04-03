@@ -38,9 +38,11 @@ func Call(us *rpr.Node, tcp int) {
 		us.Download,
 		us.Compat,
 	})
-
 	dec.Decode(&theirInfo)
-	rpr.HandshakeInitiator(us, &theirInfo, enc, dec)
+
+	if us.Compat == "COMPAT" && theirInfo.Compat == "COMPAT" {
+		rpr.HandshakeInitiator(us, &theirInfo, enc, dec)
+	}
 
 	sess := rpr.Session{
 		theirInfo,
@@ -48,10 +50,13 @@ func Call(us *rpr.Node, tcp int) {
 			rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
 		},
 	}
-	us.Rpr.Role = rpr.NODE_NORMAL
 
+	us.Rpr.Role = rpr.NODE_NORMAL
 	us.Sessions = append(us.Sessions, sess)
-	us.Rpr.NodeJoined <- true
+
+	if us.Compat == "COMPAT" && theirInfo.Compat == "COMPAT" {
+		us.Rpr.NodeJoined <- true
+	}
 
 	go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
 	go rpr.RecvData(us, sess.Rtp.Session)
@@ -90,13 +95,9 @@ func sipListener(us *rpr.Node) {
 			us.Compat,
 		})
 
-		// handshake with remote and decrease one from our capacity
-		//
-		// here the capacity calculation has been simplified
-		// for implementation's sake. In a real-world scenario,
-		// we would need estimate average bitrate for our outgoing
-		// streams and subtract that from the capacity
-		rpr.HandshakeResponder(us, &theirInfo, enc, dec)
+		if us.Compat == "COMPAT" && theirInfo.Compat == "COMPAT" {
+			rpr.HandshakeResponder(us, &theirInfo, enc, dec)
+		}
 
 		sess := rpr.Session{
 			theirInfo,
@@ -106,7 +107,9 @@ func sipListener(us *rpr.Node) {
 		}
 
 		us.Sessions = append(us.Sessions, sess)
-		us.Rpr.NodeJoined <- true
+		if us.Compat == "COMPAT" && theirInfo.Compat == "COMPAT" {
+			us.Rpr.NodeJoined <- true
+		}
 
 		go rpr.SendData(us, sess.Rtp.Session, theirInfo.Identifier)
 		go rpr.RecvData(us, sess.Rtp.Session)
@@ -137,7 +140,10 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 	}
 
 	go sipListener(&ret)
-	go rpr.RprMainLoop(&ret)
+
+	if compat == "COMPAT" {
+		go rpr.RprMainLoop(&ret)
+	}
 
 	return &ret
 }

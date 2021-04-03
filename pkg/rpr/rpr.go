@@ -79,7 +79,7 @@ func RprMainLoop(node *Node) {
 				}
 
 				if node.Rpr.Role == NODE_CLIENT {
-					fmt.Printf("[rpr] our capacity is maxed but we're already utilizing packet relaying!\n")
+					fmt.Printf("[rpr] info: our capacity is maxed but we're already utilizing packet relaying!\n")
 					return
 				}
 
@@ -144,10 +144,6 @@ func RprMainLoop(node *Node) {
 
 func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
 
-	if remote.Compat != "COMPAT" {
-		return
-	}
-
 	var msg RprInit
 
 	dec.Decode(&msg)
@@ -167,10 +163,6 @@ func HandshakeResponder(local *Node, remote *ConnectivityInfo, enc *gob.Encoder,
 }
 
 func HandshakeInitiator(local *Node, remote *ConnectivityInfo, enc *gob.Encoder, dec *gob.Decoder) {
-
-	if remote.Compat != "COMPAT" {
-		return
-	}
 
 	var resp RprResponse
 
