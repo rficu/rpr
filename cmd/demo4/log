@@ -1,0 +1,86 @@
+[rtp] 127.0.0.1:23002 <-> 127.0.0.1:22002
+[rtp] 127.0.0.1:22002 <-> 127.0.0.1:23002
+[rtp] f0c5341e: got package from 9acb0442
+[rtp] 9acb0442: got package from f0c5341e
+[rtp] 127.0.0.1:23004 <-> 127.0.0.1:24002
+[rtp] 127.0.0.1:24002 <-> 127.0.0.1:23004
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] f0c5341e: got package from aa209b8e
+[rtp] 127.0.0.1:24004 <-> 127.0.0.1:22004
+[rtp] 127.0.0.1:22004 <-> 127.0.0.1:24004
+[rtp] 9acb0442: got package from aa209b8e
+[rtp] aa209b8e: got package from 9acb0442
+[rpr] aa209b8e: start using 9acb0442 as relay node
+[rpr] 9acb0442: start relaying packets for aa209b8e
+[rtp] 127.0.0.1:25002 <-> 127.0.0.1:22006
+[rtp] 127.0.0.1:22006 <-> 127.0.0.1:25002
+[rtp] 700e0976: got package from 9acb0442
+[rtp] 9acb0442: got package from 700e0976
+[rtp] 127.0.0.1:25004 <-> 127.0.0.1:23006
+[rtp] 127.0.0.1:23006 <-> 127.0.0.1:25004
+[rtp] 700e0976: got package from f0c5341e
+[rtp] 127.0.0.1:24006 <-> 127.0.0.1:25006
+[rtp] 127.0.0.1:25006 <-> 127.0.0.1:24006
+[rtp] f0c5341e: got package from 700e0976
+[rpr] info: our capacity is maxed but we're already utilizing packet relaying!
+[rtp] aa209b8e: got package from 700e0976
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] 9acb0442: got package from f0c5341e
+[rtp] f0c5341e: got package from 9acb0442
+[rtp] aa209b8e: got package from 9acb0442
+[rtp] 9acb0442: got package from 700e0976
+[rtp] 9acb0442: got package from aa209b8e
+[rtp] f0c5341e: got relayed package from aa209b8e (9acb0442)
+[rtp] 700e0976: got package from 9acb0442
+[rtp] 700e0976: got relayed package from aa209b8e (9acb0442)
+[rtp] 700e0976: got package from f0c5341e
+[rtp] f0c5341e: got package from 700e0976
+[rtp] aa209b8e: got package from 700e0976
+[rtp] 9acb0442: got package from f0c5341e
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] f0c5341e: got package from 9acb0442
+[rtp] aa209b8e: got package from 9acb0442
+[rtp] 9acb0442: got package from aa209b8e
+[rtp] 700e0976: got package from 9acb0442
+[rtp] 700e0976: got relayed package from aa209b8e (9acb0442)
+[rtp] 9acb0442: got package from 700e0976
+[rtp] f0c5341e: got relayed package from aa209b8e (9acb0442)
+[rtp] 700e0976: got package from f0c5341e
+[rtp] f0c5341e: got package from 700e0976
+[rtp] aa209b8e: got package from 700e0976
+[rtp] aa209b8e: got package from 9acb0442
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] 700e0976: got package from f0c5341e
+[sip] 9acb0442 exiting...
+[rtp] f0c5341e: got package from 9acb0442
+[rtp] 9acb0442: got package from f0c5341e
+[rtp] f0c5341e: got package from 700e0976
+[rpr] 9acb0442 exiting...
+[rpr] request aa209b8e to perform handover
+[rtp] 9acb0442: got package from aa209b8e
+[rpr] initiate relay node switch, 9acb0442 is leaving
+[rtp] 9acb0442: exiting from rtp receiver
+[rtp] 700e0976: got package from 9acb0442
+[rtp] f0c5341e: got relayed package from aa209b8e (9acb0442)
+[rtp] 700e0976: got relayed package from aa209b8e (9acb0442)
+[rpr] aa209b8e: release previous packet relay agreement with 9acb0442
+[rpr] aa209b8e: start using f0c5341e as relay node
+[rpr] f0c5341e: start relaying packets for aa209b8e
+[rpr] 9acb0442: received confirmation for handover, now exiting...
+[rtp] aa209b8e: got package from 700e0976
+[rtp] 9acb0442: exiting from rtp sender
+[rtp] 9acb0442: exiting from rtp sender
+[rtp] 9acb0442: exiting from rtp sender
+[rtp] f0c5341e: got package from 700e0976
+[rtp] 9acb0442: exiting from rtp receiver
+[rtp] 700e0976: got package from f0c5341e
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] f0c5341e: got package from aa209b8e
+[rtp] 700e0976: got relayed package from aa209b8e (f0c5341e)
+[rtp] aa209b8e: got package from 700e0976
+[rtp] 700e0976: got package from f0c5341e
+[rtp] aa209b8e: got package from f0c5341e
+[rtp] f0c5341e: got package from aa209b8e
+[rtp] f0c5341e: got package from 700e0976
+[rtp] 700e0976: got relayed package from aa209b8e (f0c5341e)
+[rtp] aa209b8e: got package from 700e0976

@@ -14,6 +14,7 @@ const (
 	RELAY_REQUEST  = 2 // request packet relay
 	RELAY_REJECT   = 3 // reject relay reserve/request
 	RELAY_ACCEPT   = 4 // accept relay offer
+	RELAY_RELEASE  = 5 // TODO
 )
 
 type RprInit struct {
@@ -38,6 +39,19 @@ func rprMessageLoop(node *Node, Identifier uint32) {
 		node.Rpr.MsgReceived <- msg
 		_ = <-node.Rpr.Nodes[Identifier].MsgHandled
 	}
+}
+
+func rebuildRelayList(node *Node, exclude uint32) {
+
+	for i, _ := range node.Rpr.Nodes {
+		if node.Rpr.Nodes[i].Identifier != exclude {
+			node.Rpr.Candidates = append(node.Rpr.Candidates, node.Rpr.Nodes[i])
+		}
+	}
+
+	sort.Slice(node.Rpr.Candidates, func(i, j int) bool {
+		return node.Rpr.Candidates[i].Capacity > node.Rpr.Candidates[j].Capacity
+	})
 }
 
 func buildRelayList(node *Node) {
@@ -70,6 +84,20 @@ func RprMainLoop(node *Node) {
 
 	for {
 		select {
+		case <-node.Exiting:
+			fmt.Printf("[rpr] %x exiting...\n", node.Identifier)
+
+			if node.Rpr.Role == NODE_RELAY {
+				fmt.Printf("[rpr] request %x to perform handover\n", node.Rpr.Node.Identifier)
+				node.Rpr.Exiting = true
+				node.Rpr.Node.Enc.Encode(RprMessage{
+					node.Identifier,
+					RELAY_RELEASE,
+				})
+			} else {
+				node.Rpr.Exiting = true
+			}
+			break
 		case <-node.Rpr.NodeJoined:
 
 			if node.Rpr.Capacity <= len(node.Sessions) {
@@ -107,6 +135,20 @@ func RprMainLoop(node *Node) {
 
 				// TODO explain
 			} else if msg.RelayType == RELAY_OFFER {
+
+				// TODO
+				if node.Rpr.Role == NODE_CLIENT {
+					fmt.Printf("[rpr] %x: release previous packet relay agreement with %x\n",
+						node.Identifier, node.Rpr.Node.Identifier)
+
+					node.Rpr.Role = NODE_NORMAL
+
+					node.Rpr.Node.Enc.Encode(RprMessage{
+						node.Identifier,
+						RELAY_ACCEPT,
+					})
+				}
+
 				fmt.Printf("[rpr] %x: start using %x as relay node\n",
 					uint32(node.Identifier), uint32(msg.Identifier))
 
@@ -123,6 +165,13 @@ func RprMainLoop(node *Node) {
 
 				// TODO explain
 			} else if msg.RelayType == RELAY_ACCEPT {
+
+				if node.Rpr.Exiting {
+					fmt.Printf("[rpr] %x: received confirmation for handover, now exiting...\n",
+						node.Identifier)
+					return
+				}
+
 				fmt.Printf("[rpr] %x: start relaying packets for %x\n",
 					uint32(node.Identifier), uint32(msg.Identifier))
 
@@ -135,6 +184,10 @@ func RprMainLoop(node *Node) {
 			} else if msg.RelayType == RELAY_REJECT {
 				contactRelayNode(node)
 				node.Rpr.Nodes[msg.Identifier].MsgHandled <- true
+			} else if msg.RelayType == RELAY_RELEASE {
+				fmt.Printf("[rpr] initiate relay node switch, %x is leaving\n", node.Rpr.Node.Identifier)
+				rebuildRelayList(node, node.Rpr.Node.Identifier)
+				contactRelayNode(node)
 			} else {
 				fmt.Printf("unknown relay message received: %d\n", msg.RelayType)
 			}
@@ -187,6 +240,11 @@ func SendData(node *Node, session *rtp.Rtp, RemoteIdentifier uint32) {
 	var payload [10]byte
 
 	for {
+		if node.Rpr.Exiting {
+			fmt.Printf("[rtp] %x: exiting from rtp sender\n", node.Identifier)
+			return
+		}
+
 		if node.Rpr.Role == NODE_CLIENT {
 			if node.Rpr.Node.Identifier == RemoteIdentifier {
 				session.SendPacket(node.Identifier, stamp, []uint32{}, payload)
@@ -204,6 +262,11 @@ func RecvData(node *Node, session *rtp.Rtp) {
 	for {
 		select {
 		case packet := <-session.PacketReceived:
+			if node.Rpr.Exiting {
+				fmt.Printf("[rtp] %x: exiting from rtp receiver\n", node.Identifier)
+				return
+			}
+
 			if node.Rpr.Role == NODE_RELAY && node.Rpr.Node.Identifier == packet.Ssrc {
 				for _, remoteNode := range node.Sessions {
 					if remoteNode.Remote.Identifier == packet.Ssrc {

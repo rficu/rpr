@@ -33,6 +33,7 @@ type RprContext struct {
 	Candidates  []RprNode          // TODO
 	NodeJoined  chan bool          // TODO
 	MsgReceived chan RprMessage    // TODO
+	Exiting     bool               // TODO
 }
 
 type ConnectivityInfo struct {
@@ -44,7 +45,10 @@ type ConnectivityInfo struct {
 }
 
 type RtpContext struct {
-	Session *rtp.Rtp
+	Session         *rtp.Rtp
+	StopUdpReceiver chan bool
+	StopReceiving   chan bool
+	Exiting         bool
 }
 
 type Session struct {
@@ -62,4 +66,5 @@ type Node struct {
 	Rpr        RprContext
 	Sessions   []Session
 	Mtx        sync.Mutex
+	Exiting    chan bool
 }

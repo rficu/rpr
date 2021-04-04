@@ -2,7 +2,7 @@
 
 RPR is a scheme for allocating upload bandwidth from other participants of a video call for peers that have a very limited upload bandwidth to enable everyone to send video at acceptable quality.
 
-If you're interested in the idea behind this project, please read [this](https://vizardy.net/blog/scaling_to_infinity.html) and [this](https://vizardy.net/blog/scaling_to_infinity_v2.html) blogpost about it.
+If you're interested in the idea behind this project, please read [this](https://vizardy.net/blog/scaling_to_infinity.html) blogpost about it.
 
 This repository provides an implementation of RPR and a few demo applications that showcase the functionality of the protocol. Because the main point is to showcase the protocol, the implementation is very verbose and cuts some corners. For example, the demo applications assume that a constant 1 Mbps of video is sent and fake values for upload bandwidth are used instead of finding the actual values.
 
@@ -53,8 +53,11 @@ go run cmd/demo3/main.go
 
 ### Demo 4 - Relay-initiated handover
 
-Client- and relay-initiated handovers are otherwise the same but with relay-initiated handovers
-there's an extra step where the 
+In this demo, a node that is performing packet relaying for another node must leave. Thus it contacts
+the client node to inform about this. The client node then contacts other suitable nodes and asks if
+they could provide packet relaying for it. Once a suitable relay node is found, the old relay node
+is informed about this, it leaves the session and the client nodes starts sending packets to new
+relay node.
 
 ```
 go run cmd/demo4/main.go

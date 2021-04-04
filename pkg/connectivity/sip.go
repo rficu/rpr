@@ -48,6 +48,9 @@ func Call(us *rpr.Node, tcp int) {
 		theirInfo,
 		rpr.RtpContext{
 			rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
+			make(chan bool),
+			make(chan bool),
+			false,
 		},
 	}
 
@@ -103,6 +106,9 @@ func sipListener(us *rpr.Node) {
 			theirInfo,
 			rpr.RtpContext{
 				rtp.CreateSession("127.0.0.1", us.Rtp+len(us.Sessions)*2, theirInfo.Rtp),
+				make(chan bool),
+				make(chan bool),
+				false,
 			},
 		}
 
@@ -134,9 +140,11 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 			[]rpr.RprNode{},
 			make(chan bool),
 			make(chan rpr.RprMessage),
+			false,
 		},
 		[]rpr.Session{},
 		sync.Mutex{},
+		make(chan bool),
 	}
 
 	go sipListener(&ret)
@@ -146,4 +154,10 @@ func CreateNode(tcp int, rtp int, upload int, download int, compat string) *rpr.
 	}
 
 	return &ret
+}
+
+func EndCall(node *rpr.Node) {
+	fmt.Printf("[sip] %x exiting...\n", node.Identifier)
+	node.Exiting <- true
+	// TODO stop sip loop
 }
