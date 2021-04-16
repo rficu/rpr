@@ -16,7 +16,6 @@ type RtpPacket struct {
 
 type Rtp struct {
 	PacketReceived chan RtpPacket
-	StopReceiving  chan bool
 	recvConn       *net.UDPConn
 	sendConn       net.Conn
 }
@@ -65,7 +64,6 @@ func CreateSession(addr string, localPort int, remotePort int) *Rtp {
 
 	rtpInstance.sendConn = conn
 	rtpInstance.PacketReceived = make(chan RtpPacket)
-	rtpInstance.StopReceiving = make(chan bool)
 
 	go udpRunner(&rtpInstance)
 	return &rtpInstance

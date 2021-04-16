@@ -89,13 +89,10 @@ func RprMainLoop(node *Node) {
 
 			if node.Rpr.Role == NODE_RELAY {
 				fmt.Printf("[rpr] request %x to perform handover\n", node.Rpr.Node.Identifier)
-				node.Rpr.Exiting = true
 				node.Rpr.Node.Enc.Encode(RprMessage{
 					node.Identifier,
 					RELAY_RELEASE,
 				})
-			} else {
-				node.Rpr.Exiting = true
 			}
 			break
 		case <-node.Rpr.NodeJoined:
@@ -166,7 +163,7 @@ func RprMainLoop(node *Node) {
 				// TODO explain
 			} else if msg.RelayType == RELAY_ACCEPT {
 
-				if node.Rpr.Exiting {
+				if !node.Running {
 					fmt.Printf("[rpr] %x: received confirmation for handover, now exiting...\n",
 						node.Identifier)
 					return
@@ -240,7 +237,7 @@ func SendData(node *Node, session *rtp.Rtp, RemoteIdentifier uint32) {
 	var payload [10]byte
 
 	for {
-		if node.Rpr.Exiting {
+		if !node.Running {
 			fmt.Printf("[rtp] %x: exiting from rtp sender\n", node.Identifier)
 			return
 		}
@@ -262,7 +259,7 @@ func RecvData(node *Node, session *rtp.Rtp) {
 	for {
 		select {
 		case packet := <-session.PacketReceived:
-			if node.Rpr.Exiting {
+			if !node.Running {
 				fmt.Printf("[rtp] %x: exiting from rtp receiver\n", node.Identifier)
 				return
 			}
